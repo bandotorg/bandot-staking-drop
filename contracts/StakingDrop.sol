@@ -85,7 +85,7 @@ contract StakingDrop is Ownable {
             myRewards[msg.sender] = myRewards[msg.sender].add(rewards);
             claimedRewards = claimedRewards.add(rewards);
 
-            IERC20(bdtAddress).transfer(msg.sender, rewards);
+            require(IERC20(bdtAddress).transfer(msg.sender, rewards), "StakingDrop: claimRewards transfer failed");
 
             emit Claimed(msg.sender, myRewards[msg.sender], claimedRewards);
         }
