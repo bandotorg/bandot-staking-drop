@@ -11,9 +11,9 @@ contract StakingDrop is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    address public hbtcAddress; //hbtc的地址
-    address public bdtAddress; //奖励的token
-    uint256 public bonusStartAt; //活动开始时间
+    address public immutable hbtcAddress; //hbtc的地址
+    address public immutable bdtAddress; //奖励的token
+    uint256 public immutable bonusStartAt; //活动开始时间
 
     /* ========== CONSTANTS ========== */
 
@@ -37,31 +37,37 @@ contract StakingDrop is Ownable {
         address bdtAddress_,
         uint256 bonusStartAt_
     ) public Ownable() {
+        require(hbtcAddress_ != address(0), "StakingDrop: hbtcAddress_ is zero address");
+        require(bdtAddress_ != address(0), "StakingDrop: bdtAddress_ is zero address");
+
         hbtcAddress = hbtcAddress_;
         bdtAddress = bdtAddress_;
         bonusStartAt = bonusStartAt_;
     }
 
-    function withdraw(uint256 amount) public {
-        if (block.timestamp < bonusStartAt) return;
+    function withdraw(uint256 amount) external {
         if (block.timestamp < bonusStartAt.add(BONUS_DURATION)) return;
+        require(amount > 0, "StakingDrop: amount should greater than zero");
 
         claimRewards();
         myDeposit[msg.sender] = myDeposit[msg.sender].sub(amount);
         totalDeposit = totalDeposit.sub(amount);
-        IERC20(hbtcAddress).transfer(msg.sender, amount);
+
+        require(IERC20(hbtcAddress).transfer(msg.sender, amount), "StakingDrop: withdraw transfer failed");
+
         emit Withdrawal(msg.sender, amount);
     }
 
-    function deposit(uint256 _value) public {
+    function deposit(uint256 _value) external {
         if (block.timestamp < bonusStartAt) return;
-
         if (block.timestamp > bonusStartAt.add(BONUS_DURATION)) return;
+        require(_value > 0, "StakingDrop: _value should greater than zero");
 
         claimRewards();
         myDeposit[msg.sender] = myDeposit[msg.sender].add(_value);
         totalDeposit = totalDeposit.add(_value);
-        IERC20(hbtcAddress).transferFrom(msg.sender, address(this), _value);
+
+        require(IERC20(hbtcAddress).transferFrom(msg.sender, address(this), _value), "StakingDrop: deposit transferFrom failed");
 
         emit Deposit(msg.sender, _value);
     }
